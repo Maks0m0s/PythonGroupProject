@@ -56,6 +56,11 @@ class SalesManager:
     def __init__(self):
         self.sales = {}
 
+    def add_sale(self, employee, book, date, real_price):
+        pass
+
+    def remove_sale(self, employee, book, date, real_price):
+        pass
 
 class Book(ABC):
     """
