@@ -35,7 +35,29 @@ class EmployeesManager:
     def __init__(self):
         self.employees = {}
 
-class Book:
+    def add_employee(self, full_name, position, phone_number, email):
+        if full_name not in self.employees.keys():
+            self.employees[full_name] = Employee(full_name, position, phone_number, email)
+            return
+        print("This employee already exists.")
+
+    def remove_employee(self, full_name):
+        if full_name in self.employees.keys():
+            del self.employees[full_name]
+            return
+        print("This employee doesn't exist.")
+
+
+class BooksManager:
+    def __init__(self):
+        self.books = {}
+
+class SalesManager:
+    def __init__(self):
+        self.sales = {}
+
+
+class Book(ABC):
     """
     Класс, который хранит информацию об одной книге.
     """
@@ -47,7 +69,7 @@ class Book:
         self.cost = cost
         self.potential_price = potential_price
 
-    def to_dict(self) -> dict:
+    def get_data(self) -> dict:
         """
         Возвращает словарь с данными книги для сериализации в JSON.
         """
