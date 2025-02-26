@@ -1,20 +1,5 @@
 from abc import ABC, abstractmethod
 
-class IObject(ABC):
-    @abstractmethod
-    def get_data(self):
-        pass
-
-class Employee(IObject):
-    def __init__(self, full_name, position, phone_number, email):
-        self.full_name = full_name
-        self.position = position
-        self.phone_number = phone_number
-        self.email = email
-
-    def get_data(self):
-        return f"full name : {self.full_name}\nwork position : {self.position}\nphone number : {self.phone_number}\nemail : {self.email}".title()
-
 class BookShop:
     def __init__(self):
         self.employees_manager = EmployeesManager()
@@ -29,7 +14,6 @@ class BookShop:
 
     def get_sales_manager(self):
         return self.sales_manager
-
 
 class EmployeesManager:
     def __init__(self):
@@ -47,7 +31,6 @@ class EmployeesManager:
             return
         print("This employee doesn't exist.")
 
-
 class BooksManager:
     def __init__(self):
         self.books = {}
@@ -62,10 +45,22 @@ class SalesManager:
     def remove_sale(self, employee, book, date, real_price):
         pass
 
-class Book(ABC):
-    """
-    Класс, который хранит информацию об одной книге.
-    """
+class IObject(ABC):
+    @abstractmethod
+    def get_data(self):
+        pass
+
+class Employee(IObject):
+    def __init__(self, full_name, position, phone_number, email):
+        self.full_name = full_name
+        self.position = position
+        self.phone_number = phone_number
+        self.email = email
+
+    def get_data(self):
+        return f"full name : {self.full_name}\nwork position : {self.position}\nphone number : {self.phone_number}\nemail : {self.email}".title()
+
+class Book(IObject):
     def __init__(self, title: str, year: int, author: str, genre: str, cost: float, potential_price: float):
         self.title = title
         self.year = year
@@ -74,32 +69,15 @@ class Book(ABC):
         self.cost = cost
         self.potential_price = potential_price
 
-    def get_data(self) -> dict:
-        """
-        Возвращает словарь с данными книги для сериализации в JSON.
-        """
-        return {
-            "title": self.title,
-            "year": self.year,
-            "author": self.author,
-            "genre": self.genre,
-            "cost": self.cost,
-            "potential_price": self.potential_price
-        }
+    def get_data(self):
+        return f"title : {self.title}\nyear : {self.year}\nauthor : {self.author}\ngenre : {self.genre}\ncost : {self.cost}\npotencial price : {self.potential_price}".title()
 
-    @staticmethod
-    def from_dict(data: dict):
-        """
-        Создаёт Book-объект из словаря (например, после чтения из JSON-файла).
-        """
-        return Book(
-            title=data["title"],
-            year=data["year"],
-            author=data["author"],
-            genre=data["genre"],
-            cost=data["cost"],
-            potential_price=data["potential_price"]
-        )
+class Sale(IObject):
+    def __init__(self, employee, book, sale_date, real_price):
+        self.employee = employee
+        self.book = book
+        self.sale_date = sale_date
+        self.real_price = real_price
 
-
-
+    def get_data(self):
+        return f"employee : {self.employee}\nbook : {self.book}\nsale date : {self.sale_date}\nreal price : {self.real_price}".title()
