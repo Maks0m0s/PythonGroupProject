@@ -1,3 +1,5 @@
+#Icluded Patterns Composite, Factory
+
 from abc import ABC, abstractmethod
 
 class BookShop:
