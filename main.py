@@ -1,6 +1,7 @@
-#Icluded Patterns Composite, Factory
+# Icluded Patterns Composite, Factory
 
 from abc import ABC, abstractmethod
+
 
 class BookShop:
     def __init__(self):
@@ -17,6 +18,7 @@ class BookShop:
     def get_sales_manager(self):
         return self.sales_manager
 
+
 class Reporter:
     def __init__(self, book_shop):
         self.book_shop = book_shop
@@ -26,6 +28,7 @@ class Reporter:
             return FileReporter(self.book_shop)
         elif destination == "console":
             return ConsoleReporter(self.book_shop)
+
 
 class IReport(ABC):
     def __init__(self, book_shop):
@@ -54,6 +57,7 @@ class IReport(ABC):
     @abstractmethod
     def sales_by_employee(self, employee):
         pass
+
 
 class ConsoleReporter(IReport):
     def employees_report(self):
@@ -106,6 +110,23 @@ class ConsoleReporter(IReport):
                 found_sales = True
         if not found_sales:
             print("No sales by this employee.")
+
+    def best_selling_book_for_period(self, start_date, finish_date):
+        print(f"Best selling book for period: {start_date} - {finish_date}")
+        found_books = False
+        books_in_period = []
+        for sale in self.book_shop.sales_manager.sales:
+            if start_date <= sale.sale_date <= finish_date:
+                books_in_period.append(sale.book.title)
+                found_books = True
+        if not found_books:
+            print("No books in period.")
+            return
+        books_sale_number = [books_in_period.count(b) for b in books_in_period]
+        max_sale_number = max(books_sale_number)
+        index = books_sale_number.index(max_sale_number)
+        print(books_in_period[index])
+
 
 class FileReporter(IReport):
     def employees_report(self):
@@ -169,6 +190,7 @@ class FileReporter(IReport):
             if not found_sales:
                 f.write("No sales by this employee.\n")
 
+
 class EmployeesManager:
     def __init__(self):
         self.employees = []
@@ -185,6 +207,7 @@ class EmployeesManager:
         else:
             print("This employee doesn't exist.")
 
+
 class BooksManager:
     def __init__(self):
         self.books = []
@@ -197,6 +220,7 @@ class BooksManager:
             self.books.remove(book)
         else:
             print("This book doesn't exist.")
+
 
 class SalesManager:
     def __init__(self):
@@ -211,10 +235,12 @@ class SalesManager:
         else:
             print("This sale doesn't exist.")
 
+
 class IObject(ABC):
     @abstractmethod
     def get_data(self):
         pass
+
 
 class Employee(IObject):
     def __init__(self, full_name, position, phone_number, email):
@@ -235,11 +261,12 @@ class Employee(IObject):
         if not isinstance(other, Employee):
             return False
         return (
-            self.full_name == other.full_name
-            and self.position == other.position
-            and self.phone_number == other.phone_number
-            and self.email == other.email
+                self.full_name == other.full_name
+                and self.position == other.position
+                and self.phone_number == other.phone_number
+                and self.email == other.email
         )
+
 
 class Book(IObject):
     def __init__(self, title, year, author, genre, cost, potential_price):
@@ -260,6 +287,7 @@ class Book(IObject):
             f"potencial price : {self.potential_price}"
         ).title()
 
+
 class Sale(IObject):
     def __init__(self, employee, book, sale_date, real_price):
         self.employee = employee
@@ -275,25 +303,32 @@ class Sale(IObject):
             f"real price : {self.real_price}"
         ).title()
 
+
 if __name__ == "__main__":
     shop = BookShop()
     book_manager = shop.get_books_manager()
+
     book = Book("Python", 2025, "Maksym K", "Educative", 10, 20)
     book_manager.add_book(book)
+
     book1 = Book("C#", 2024, "Maksym K", "Educative", 10, 20)
     book_manager.add_book(book1)
+
     emp_manager = shop.get_employees_manager()
     emp1 = Employee("John Doe", "Sales Manager", "+123456789", "john@example.com")
     emp_manager.add_employee(emp1)
+
     emp2 = Employee("Jane Smith", "Cashier", "+987654321", "jane@example.com")
     emp_manager.add_employee(emp2)
+
     sales_manager = shop.get_sales_manager()
-    sale1 = Sale(emp1, book, "2025-02-01", 18.0)
-    sale2 = Sale(emp2, book1, "2025-02-02", 19.5)
+    sale1 = Sale(emp1, book1, "2025-02-01", 18.0)
+    sale2 = Sale(emp2, book, "2025-02-02", 19.5)
     sale3 = Sale(emp1, book1, "2025-02-03", 20.0)
     sales_manager.add_sale(sale1)
     sales_manager.add_sale(sale2)
     sales_manager.add_sale(sale3)
+
     reporter = Reporter(shop)
     file_reporter = reporter.get_reporter("file")
     file_reporter.books_report()
@@ -301,3 +336,4 @@ if __name__ == "__main__":
     console_reporter.sales_by_employee(emp1)
     file_reporter.sales_for_date("2025-02-02")
     console_reporter.sales_for_period("2025-02-01", "2025-02-03")
+    console_reporter.best_selling_book_for_period("2025-02-01", "2025-02-03")
