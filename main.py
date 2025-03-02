@@ -1,6 +1,7 @@
 #Icluded Patterns Composite, Factory
 
 from abc import ABC, abstractmethod
+import json 
 
 
 class BookShop:
@@ -18,6 +19,90 @@ class BookShop:
     def get_sales_manager(self):
         return self.sales_manager
 
+    def save_data(self, filename):
+        """
+        Сохраняет сотрудников, книги и продажи в один JSON-файл.
+        """
+        data = {
+            "employees": [
+                {
+                    "full_name": e.full_name,
+                    "position": e.position,
+                    "phone_number": e.phone_number,
+                    "email": e.email
+                }
+                for e in self.employees_manager.employees
+            ],
+            "books": [
+                {
+                    "title": b.title,
+                    "year": b.year,
+                    "author": b.author,
+                    "genre": b.genre,
+                    "cost": b.cost,
+                    "potential_price": b.potential_price
+                }
+                for b in self.books_manager.books
+            ],
+            "sales": [
+                {
+                    "employee_full_name": s.employee.full_name,  
+                    "book_title": s.book.title,                  
+                    "sale_date": s.sale_date,
+                    "real_price": s.real_price
+                }
+                for s in self.sales_manager.sales
+            ]
+        }
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+
+    def load_data(self, filename):
+        """
+        Загружает сотрудников, книги и продажи из JSON-файла,
+        предварительно очищая все списки в менеджерах.
+        """
+        with open(filename, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+       
+        self.employees_manager.employees.clear()
+        self.books_manager.books.clear()
+        self.sales_manager.sales.clear()
+
+    
+        employees_map = {}
+        for e_data in data.get("employees", []):
+            emp = Employee(
+                e_data["full_name"],
+                e_data["position"],
+                e_data["phone_number"],
+                e_data["email"]
+            )
+            self.employees_manager.add_employee(emp)
+            employees_map[emp.full_name] = emp
+
+      
+        books_map = {}
+        for b_data in data.get("books", []):
+            book = Book(
+                b_data["title"],
+                b_data["year"],
+                b_data["author"],
+                b_data["genre"],
+                b_data["cost"],
+                b_data["potential_price"]
+            )
+            self.books_manager.add_book(book)
+            books_map[book.title] = book
+
+       
+        for s_data in data.get("sales", []):
+            emp = employees_map.get(s_data["employee_full_name"])
+            bk = books_map.get(s_data["book_title"])
+            sale = Sale(emp, bk, s_data["sale_date"], s_data["real_price"])
+            self.sales_manager.add_sale(sale)
+
 
 class Reporter:
     def __init__(self, book_shop):
@@ -28,6 +113,7 @@ class Reporter:
             return FileReporter(self.book_shop)
         elif destination == "console":
             return ConsoleReporter(self.book_shop)
+
 
 class IReport(ABC):
     def __init__(self, book_shop):
@@ -72,6 +158,14 @@ class IReport(ABC):
     @abstractmethod
     def most_selling_author_for_period(self, start_date, finish_date):
         pass
+
+    @abstractmethod
+    def most_selling_genre_for_period(self, start_date, finish_date):
+        """
+        Метод для определения наиболее продаваемого жанра за указанный период.
+        """
+        pass
+
 
 class ConsoleReporter(IReport):
     def employees_report(self):
@@ -186,6 +280,23 @@ class ConsoleReporter(IReport):
         max_sale_number = max(authors_sale_number)
         index = authors_sale_number.index(max_sale_number)
         print(authors_in_period[index])
+
+    def most_selling_genre_for_period(self, start_date, finish_date):
+        print(f"The most selling genre for period {start_date} - {finish_date}:")
+        found_books = False
+        genres_in_period = []
+        for sale in self.book_shop.sales_manager.sales:
+            if start_date <= sale.sale_date <= finish_date:
+                genres_in_period.append(sale.book.genre)
+                found_books = True
+        if not found_books:
+            print("No books in this period.")
+            return
+        genres_sale_number = [genres_in_period.count(g) for g in genres_in_period]
+        max_sale_number = max(genres_sale_number)
+        index = genres_sale_number.index(max_sale_number)
+        print(genres_in_period[index])
+
 
 class FileReporter(IReport):
     def employees_report(self):
@@ -315,6 +426,24 @@ class FileReporter(IReport):
             index = authors_sale_number.index(max_sale_number)
             f.write(authors_in_period[index])
 
+    def most_selling_genre_for_period(self, start_date, finish_date):
+        filename = f"most_selling_genre_{start_date}_{finish_date}.txt"
+        with open(filename, "w+", encoding="utf-8") as f:
+            f.write(f"The most selling genre for period {start_date} - {finish_date}:\n".title())
+            found_books = False
+            genres_in_period = []
+            for sale in self.book_shop.sales_manager.sales:
+                if start_date <= sale.sale_date <= finish_date:
+                    genres_in_period.append(sale.book.genre)
+                    found_books = True
+            if not found_books:
+                f.write("No books in this period.\n")
+                return
+            genres_sale_number = [genres_in_period.count(g) for g in genres_in_period]
+            max_sale_number = max(genres_sale_number)
+            index = genres_sale_number.index(max_sale_number)
+            f.write(genres_in_period[index])
+
 
 class EmployeesManager:
     def __init__(self):
@@ -386,10 +515,10 @@ class Employee(IObject):
         if not isinstance(other, Employee):
             return False
         return (
-                self.full_name == other.full_name
-                and self.position == other.position
-                and self.phone_number == other.phone_number
-                and self.email == other.email
+            self.full_name == other.full_name
+            and self.position == other.position
+            and self.phone_number == other.phone_number
+            and self.email == other.email
         )
 
 
@@ -457,3 +586,6 @@ if __name__ == "__main__":
     reporter = Reporter(shop)
     file_reporter = reporter.get_reporter("file")
     console_reporter = reporter.get_reporter("console")
+    
+    console_reporter.most_selling_genre_for_period("2025-02-01", "2025-02-05")
+    file_reporter.most_selling_genre_for_period("2025-02-01", "2025-02-05")
