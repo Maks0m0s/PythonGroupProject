@@ -1,8 +1,4 @@
-#Icluded Patterns Composite, Factory
-
 from abc import ABC, abstractmethod
-import json 
-
 
 class BookShop:
     def __init__(self):
@@ -20,89 +16,71 @@ class BookShop:
         return self.sales_manager
 
     def save_data(self, filename):
-        """
-        Сохраняет сотрудников, книги и продажи в один JSON-файл.
-        """
-        data = {
-            "employees": [
-                {
-                    "full_name": e.full_name,
-                    "position": e.position,
-                    "phone_number": e.phone_number,
-                    "email": e.email
-                }
-                for e in self.employees_manager.employees
-            ],
-            "books": [
-                {
-                    "title": b.title,
-                    "year": b.year,
-                    "author": b.author,
-                    "genre": b.genre,
-                    "cost": b.cost,
-                    "potential_price": b.potential_price
-                }
-                for b in self.books_manager.books
-            ],
-            "sales": [
-                {
-                    "employee_full_name": s.employee.full_name,  
-                    "book_title": s.book.title,                  
-                    "sale_date": s.sale_date,
-                    "real_price": s.real_price
-                }
-                for s in self.sales_manager.sales
-            ]
-        }
         with open(filename, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
+            f.write("Employees:\n")
+            for e in self.employees_manager.employees:
+                line = f"{e.full_name},{e.position},{e.phone_number},{e.email}\n"
+                f.write(line)
+            f.write("Books:\n")
+            for b in self.books_manager.books:
+                line = f"{b.title},{b.year},{b.author},{b.genre},{b.cost},{b.potential_price}\n"
+                f.write(line)
+            f.write("Sales:\n")
+            for s in self.sales_manager.sales:
+                line = f"{s.employee.full_name},{s.book.title},{s.sale_date},{s.real_price}\n"
+                f.write(line)
 
     def load_data(self, filename):
-        """
-        Загружает сотрудников, книги и продажи из JSON-файла,
-        предварительно очищая все списки в менеджерах.
-        """
-        with open(filename, "r", encoding="utf-8") as f:
-            data = json.load(f)
-
-       
         self.employees_manager.employees.clear()
         self.books_manager.books.clear()
         self.sales_manager.sales.clear()
-
-    
         employees_map = {}
-        for e_data in data.get("employees", []):
-            emp = Employee(
-                e_data["full_name"],
-                e_data["position"],
-                e_data["phone_number"],
-                e_data["email"]
-            )
-            self.employees_manager.add_employee(emp)
-            employees_map[emp.full_name] = emp
-
-      
         books_map = {}
-        for b_data in data.get("books", []):
-            book = Book(
-                b_data["title"],
-                b_data["year"],
-                b_data["author"],
-                b_data["genre"],
-                b_data["cost"],
-                b_data["potential_price"]
-            )
+        with open(filename, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+        lines = [line.strip() for line in lines]
+        try:
+            employees_index = lines.index("Employees:")
+            books_index = lines.index("Books:")
+            sales_index = lines.index("Sales:")
+        except ValueError:
+            return
+        for line in lines[employees_index + 1 : books_index]:
+            if not line:
+                continue
+            parts = line.split(",")
+            if len(parts) != 4:
+                continue
+            full_name, position, phone_number, email = parts
+            emp = Employee(full_name, position, phone_number, email)
+            self.employees_manager.add_employee(emp)
+            employees_map[full_name] = emp
+        for line in lines[books_index + 1 : sales_index]:
+            if not line:
+                continue
+            parts = line.split(",")
+            if len(parts) != 6:
+                continue
+            title, year_str, author, genre, cost_str, potential_price_str = parts
+            year = int(year_str)
+            cost = float(cost_str)
+            potential_price = float(potential_price_str)
+            book = Book(title, year, author, genre, cost, potential_price)
             self.books_manager.add_book(book)
-            books_map[book.title] = book
-
-       
-        for s_data in data.get("sales", []):
-            emp = employees_map.get(s_data["employee_full_name"])
-            bk = books_map.get(s_data["book_title"])
-            sale = Sale(emp, bk, s_data["sale_date"], s_data["real_price"])
-            self.sales_manager.add_sale(sale)
-
+            books_map[title] = book
+        for line in lines[sales_index + 1 :]:
+            if not line:
+                continue
+            parts = line.split(",")
+            if len(parts) != 4:
+                continue
+            employee_full_name, book_title, sale_date, real_price_str = parts
+            real_price = float(real_price_str)
+            emp = employees_map.get(employee_full_name, None)
+            bk = books_map.get(book_title, None)
+            if emp is not None and bk is not None:
+                sale = Sale(emp, bk, sale_date, real_price)
+                self.sales_manager.add_sale(sale)
 
 class Reporter:
     def __init__(self, book_shop):
@@ -113,7 +91,6 @@ class Reporter:
             return FileReporter(self.book_shop)
         elif destination == "console":
             return ConsoleReporter(self.book_shop)
-
 
 class IReport(ABC):
     def __init__(self, book_shop):
@@ -161,11 +138,7 @@ class IReport(ABC):
 
     @abstractmethod
     def most_selling_genre_for_period(self, start_date, finish_date):
-        """
-        Метод для определения наиболее продаваемого жанра за указанный период.
-        """
         pass
-
 
 class ConsoleReporter(IReport):
     def employees_report(self):
@@ -297,7 +270,6 @@ class ConsoleReporter(IReport):
         index = genres_sale_number.index(max_sale_number)
         print(genres_in_period[index])
 
-
 class FileReporter(IReport):
     def employees_report(self):
         with open("employees.txt", "w+", encoding="utf-8") as my_file:
@@ -361,7 +333,7 @@ class FileReporter(IReport):
                 f.write("No sales by this employee.\n")
 
     def best_selling_book_for_period(self, start_date, finish_date):
-        with open(f"best selling book in period : {start_date} - {finish_date}", "w+") as f:
+        with open(f"best_selling_book_{start_date}_{finish_date}.txt", "w+", encoding="utf-8") as f:
             f.write(f"Best selling book for period: {start_date} - {finish_date} :\n".title())
             found_books = False
             books_in_period = []
@@ -378,7 +350,7 @@ class FileReporter(IReport):
             f.write(books_in_period[index])
 
     def most_successful_employee_for_period(self, start_date, finish_date):
-        with open(f"most successful employee for period {start_date} - {finish_date}", "w+") as f:
+        with open(f"most_successful_employee_{start_date}_{finish_date}.txt", "w+", encoding="utf-8") as f:
             f.write(f"The most successful employee for period {start_date} - {finish_date} :\n".title())
             found_employees = False
             employees_in_period = []
@@ -395,7 +367,7 @@ class FileReporter(IReport):
             f.write(employees_in_period[index].get_data())
 
     def total_money_for_period(self, start_date, finish_date):
-        with open(f"total money for period {start_date} - {finish_date}", "w+") as f:
+        with open(f"total_money_{start_date}_{finish_date}.txt", "w+", encoding="utf-8") as f:
             f.write(f"Total earned money for period {start_date} - {finish_date} :\n".title())
             found_sales = False
             sales_in_period = []
@@ -410,7 +382,7 @@ class FileReporter(IReport):
             f.write(f"{total_money}$")
 
     def most_selling_author_for_period(self, start_date, finish_date):
-        with open(f"most selling author for period {start_date} - {finish_date}", "w+") as f:
+        with open(f"most_selling_author_{start_date}_{finish_date}.txt", "w+", encoding="utf-8") as f:
             f.write(f"The most selling book-author for period {start_date} - {finish_date} :\n".title())
             found_book = False
             authors_in_period = []
@@ -444,7 +416,6 @@ class FileReporter(IReport):
             index = genres_sale_number.index(max_sale_number)
             f.write(genres_in_period[index])
 
-
 class EmployeesManager:
     def __init__(self):
         self.employees = []
@@ -461,7 +432,6 @@ class EmployeesManager:
         else:
             print("This employee doesn't exist.")
 
-
 class BooksManager:
     def __init__(self):
         self.books = []
@@ -474,7 +444,6 @@ class BooksManager:
             self.books.remove(book)
         else:
             print("This book doesn't exist.")
-
 
 class SalesManager:
     def __init__(self):
@@ -489,12 +458,10 @@ class SalesManager:
         else:
             print("This sale doesn't exist.")
 
-
 class IObject(ABC):
     @abstractmethod
     def get_data(self):
         pass
-
 
 class Employee(IObject):
     def __init__(self, full_name, position, phone_number, email):
@@ -521,7 +488,6 @@ class Employee(IObject):
             and self.email == other.email
         )
 
-
 class Book(IObject):
     def __init__(self, title, year, author, genre, cost, potential_price):
         self.title = title
@@ -541,7 +507,6 @@ class Book(IObject):
             f"potencial price : {self.potential_price}"
         ).title()
 
-
 class Sale(IObject):
     def __init__(self, employee, book, sale_date, real_price):
         self.employee = employee
@@ -557,24 +522,18 @@ class Sale(IObject):
             f"real price : {self.real_price}"
         ).title()
 
-
 if __name__ == "__main__":
     shop = BookShop()
     book_manager = shop.get_books_manager()
-
     book = Book("Python Basics", 2025, "Maksym K", "Educative", 10, 20)
     book_manager.add_book(book)
-
     book1 = Book("C#", 2024, "Maksym K", "Educative", 10, 20)
     book_manager.add_book(book1)
-
     emp_manager = shop.get_employees_manager()
     emp1 = Employee("John Doe", "Sales Manager", "+123456789", "john@example.com")
     emp_manager.add_employee(emp1)
-
     emp2 = Employee("Jane Smith", "Cashier", "+987654321", "jane@example.com")
     emp_manager.add_employee(emp2)
-
     sales_manager = shop.get_sales_manager()
     sale1 = Sale(emp1, book, "2025-02-01", 18.0)
     sale2 = Sale(emp2, book1, "2025-02-02", 19.5)
@@ -582,10 +541,10 @@ if __name__ == "__main__":
     sales_manager.add_sale(sale1)
     sales_manager.add_sale(sale2)
     sales_manager.add_sale(sale3)
-
+    shop.save_data("data.txt")
+    shop.load_data("data.txt")
     reporter = Reporter(shop)
     file_reporter = reporter.get_reporter("file")
     console_reporter = reporter.get_reporter("console")
-    
     console_reporter.most_selling_genre_for_period("2025-02-01", "2025-02-05")
     file_reporter.most_selling_genre_for_period("2025-02-01", "2025-02-05")
