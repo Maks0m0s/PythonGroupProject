@@ -1,4 +1,4 @@
-# Icluded Patterns Composite, Factory
+#Icluded Patterns Composite, Factory
 
 from abc import ABC, abstractmethod
 
@@ -29,7 +29,6 @@ class Reporter:
         elif destination == "console":
             return ConsoleReporter(self.book_shop)
 
-
 class IReport(ABC):
     def __init__(self, book_shop):
         self.book_shop = book_shop
@@ -58,6 +57,21 @@ class IReport(ABC):
     def sales_by_employee(self, employee):
         pass
 
+    @abstractmethod
+    def best_selling_book_for_period(self, start_date, finish_date):
+        pass
+
+    @abstractmethod
+    def most_successful_employee_for_period(self, start_date, finish_date):
+        pass
+
+    @abstractmethod
+    def total_money_for_period(self, start_date, finish_date):
+        pass
+
+    @abstractmethod
+    def most_selling_author_for_period(self, start_date, finish_date):
+        pass
 
 class ConsoleReporter(IReport):
     def employees_report(self):
@@ -112,7 +126,7 @@ class ConsoleReporter(IReport):
             print("No sales by this employee.")
 
     def best_selling_book_for_period(self, start_date, finish_date):
-        print(f"Best selling book for period: {start_date} - {finish_date}")
+        print(f"The best selling book for period: {start_date} - {finish_date} :".title())
         found_books = False
         books_in_period = []
         for sale in self.book_shop.sales_manager.sales:
@@ -127,6 +141,51 @@ class ConsoleReporter(IReport):
         index = books_sale_number.index(max_sale_number)
         print(books_in_period[index])
 
+    def most_successful_employee_for_period(self, start_date, finish_date):
+        print(f"The most successful employee for period {start_date} - {finish_date} :".title())
+        found_employees = False
+        employees_in_period = []
+        for sale in self.book_shop.sales_manager.sales:
+            if start_date <= sale.sale_date <= finish_date:
+                employees_in_period.append(sale.employee)
+                found_employees = True
+        if not found_employees:
+            print("No employees in period.")
+            return
+        employees_sale_number = [employees_in_period.count(e) for e in employees_in_period]
+        max_sale_number = max(employees_sale_number)
+        index = employees_sale_number.index(max_sale_number)
+        print(employees_in_period[index].get_data())
+
+    def total_money_for_period(self, start_date, finish_date):
+        print(f"Total earned money for period {start_date} - {finish_date} :".title())
+        found_sales = False
+        sales_in_period = []
+        for sale in self.book_shop.sales_manager.sales:
+            if start_date <= sale.sale_date <= finish_date:
+                sales_in_period.append(sale.real_price)
+                found_sales = True
+        if not found_sales:
+            print("No sales in period.")
+            return
+        total_money = sum(sales_in_period)
+        print(f"{total_money}$")
+
+    def most_selling_author_for_period(self, start_date, finish_date):
+        print(f"The most selling book-author for period {start_date} - {finish_date} :".title())
+        found_book = False
+        authors_in_period = []
+        for sale in self.book_shop.sales_manager.sales:
+            if start_date <= sale.sale_date <= finish_date:
+                authors_in_period.append(sale.book.author)
+                found_book = True
+        if not found_book:
+            print("No books in period.")
+            return
+        authors_sale_number = [authors_in_period.count(a) for a in authors_in_period]
+        max_sale_number = max(authors_sale_number)
+        index = authors_sale_number.index(max_sale_number)
+        print(authors_in_period[index])
 
 class FileReporter(IReport):
     def employees_report(self):
@@ -189,6 +248,72 @@ class FileReporter(IReport):
                     found_sales = True
             if not found_sales:
                 f.write("No sales by this employee.\n")
+
+    def best_selling_book_for_period(self, start_date, finish_date):
+        with open(f"best selling book in period : {start_date} - {finish_date}", "w+") as f:
+            f.write(f"Best selling book for period: {start_date} - {finish_date} :\n".title())
+            found_books = False
+            books_in_period = []
+            for sale in self.book_shop.sales_manager.sales:
+                if start_date <= sale.sale_date <= finish_date:
+                    books_in_period.append(sale.book.title)
+                    found_books = True
+            if not found_books:
+                f.write("No books in period.")
+                return
+            books_sale_number = [books_in_period.count(b) for b in books_in_period]
+            max_sale_number = max(books_sale_number)
+            index = books_sale_number.index(max_sale_number)
+            f.write(books_in_period[index])
+
+    def most_successful_employee_for_period(self, start_date, finish_date):
+        with open(f"most successful employee for period {start_date} - {finish_date}", "w+") as f:
+            f.write(f"The most successful employee for period {start_date} - {finish_date} :\n".title())
+            found_employees = False
+            employees_in_period = []
+            for sale in self.book_shop.sales_manager.sales:
+                if start_date <= sale.sale_date <= finish_date:
+                    employees_in_period.append(sale.employee)
+                    found_employees = True
+            if not found_employees:
+                f.write("No employees in period.")
+                return
+            employees_sale_number = [employees_in_period.count(e) for e in employees_in_period]
+            max_sale_number = max(employees_sale_number)
+            index = employees_sale_number.index(max_sale_number)
+            f.write(employees_in_period[index].get_data())
+
+    def total_money_for_period(self, start_date, finish_date):
+        with open(f"total money for period {start_date} - {finish_date}", "w+") as f:
+            f.write(f"Total earned money for period {start_date} - {finish_date} :\n".title())
+            found_sales = False
+            sales_in_period = []
+            for sale in self.book_shop.sales_manager.sales:
+                if start_date <= sale.sale_date <= finish_date:
+                    sales_in_period.append(sale.real_price)
+                    found_sales = True
+            if not found_sales:
+                f.write("No sales in period.")
+                return
+            total_money = sum(sales_in_period)
+            f.write(f"{total_money}$")
+
+    def most_selling_author_for_period(self, start_date, finish_date):
+        with open(f"most selling author for period {start_date} - {finish_date}", "w+") as f:
+            f.write(f"The most selling book-author for period {start_date} - {finish_date} :\n".title())
+            found_book = False
+            authors_in_period = []
+            for sale in self.book_shop.sales_manager.sales:
+                if start_date <= sale.sale_date <= finish_date:
+                    authors_in_period.append(sale.book.author)
+                    found_book = True
+            if not found_book:
+                f.write("No books in period.")
+                return
+            authors_sale_number = [authors_in_period.count(a) for a in authors_in_period]
+            max_sale_number = max(authors_sale_number)
+            index = authors_sale_number.index(max_sale_number)
+            f.write(authors_in_period[index])
 
 
 class EmployeesManager:
@@ -308,7 +433,7 @@ if __name__ == "__main__":
     shop = BookShop()
     book_manager = shop.get_books_manager()
 
-    book = Book("Python", 2025, "Maksym K", "Educative", 10, 20)
+    book = Book("Python Basics", 2025, "Maksym K", "Educative", 10, 20)
     book_manager.add_book(book)
 
     book1 = Book("C#", 2024, "Maksym K", "Educative", 10, 20)
@@ -322,18 +447,13 @@ if __name__ == "__main__":
     emp_manager.add_employee(emp2)
 
     sales_manager = shop.get_sales_manager()
-    sale1 = Sale(emp1, book1, "2025-02-01", 18.0)
-    sale2 = Sale(emp2, book, "2025-02-02", 19.5)
-    sale3 = Sale(emp1, book1, "2025-02-03", 20.0)
+    sale1 = Sale(emp1, book, "2025-02-01", 18.0)
+    sale2 = Sale(emp2, book1, "2025-02-02", 19.5)
+    sale3 = Sale(emp1, book, "2025-02-03", 20.0)
     sales_manager.add_sale(sale1)
     sales_manager.add_sale(sale2)
     sales_manager.add_sale(sale3)
 
     reporter = Reporter(shop)
     file_reporter = reporter.get_reporter("file")
-    file_reporter.books_report()
     console_reporter = reporter.get_reporter("console")
-    console_reporter.sales_by_employee(emp1)
-    file_reporter.sales_for_date("2025-02-02")
-    console_reporter.sales_for_period("2025-02-01", "2025-02-03")
-    console_reporter.best_selling_book_for_period("2025-02-01", "2025-02-03")
